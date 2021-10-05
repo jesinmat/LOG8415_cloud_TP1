@@ -52,8 +52,8 @@ def terminate(instanceIDs):
     print('Terminating instance...')
     return instances_action(instanceIDs, lambda ids: client.terminate_instances(InstanceIds=ids))
 
-def create(name, imageId = 'ami-09e67e426f25ce0d7', instanceType = 't2.micro', keypair = 'matyas-aws', secGroup = 'sg-07412473e0d10eda1', userScript = ''):
-    print('Starting instance...')
+def create(name, imageId = 'ami-09e67e426f25ce0d7', instanceType = 't2.micro', keypair = 'matyas-aws', securityGroup = 'sg-07412473e0d10eda1', userScript = ''):
+    print('Creating instance...')
     if os.path.exists(userScript):
         with open(userScript, 'r') as file:
             userScript = file.read()
@@ -62,7 +62,7 @@ def create(name, imageId = 'ami-09e67e426f25ce0d7', instanceType = 't2.micro', k
                         MinCount=1,
                         MaxCount=1,
                         KeyName=keypair,
-                        SecurityGroupIds=[secGroup],
+                        SecurityGroupIds=[securityGroup],
                         UserData=userScript,
                         TagSpecifications=[{
                             'ResourceType': 'instance',
@@ -88,12 +88,13 @@ def ssh(instanceID):
 
 def help():
     print('Options:')
-    print('     l, list                   - show instances and their status')
+    print('     l, list                   	- show instances and their status')
     print('     u, up, start instance-name  - start instance by id')
     print('     d, down, stop instance-name - stop instance by id')
     print('     t, terminate  instance-name - terminate instance by id')
     print('     c, create instance-name [--imageId=ami-XXX] [--instanceType=t2.micro] [--keypair=keypair-name] [--securityGroup=sg-XXX] [--userScript=script.py] - create new instance')
-    print('     x, exit                   - exit')
+    print('     ssh instance-name           - SSH into a running instance. Use "exit" to return back to this script')
+    print('     x, exit                   	- exit')
     print('You can use both instance IDs or instance names in commands.')
 
 
