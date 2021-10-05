@@ -4,3 +4,12 @@
     - You MUST edit `create` and `ssh` functions to use your own values (key and security group) and commands (ssh), I have it set up for my machine.
 
 - aws-skripty.sh - bash version of some basic AWS commands. Do not use.
+
+# Launching instances
+
+# Creating clusters
+
+Just follow https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-application-load-balancer.html exactly.
+
+Edit your Flask apps so that half of them returns something for '/cluster1' and the other half returns something for '/cluster2'.
+Also, every app should return something for '/', since '/' is used by Amazon to check the health of your server.
