@@ -1,13 +1,12 @@
 import boto3
 import os.path
-from ast import literal_eval
 
 ec2 = boto3.resource('ec2')
 client = boto3.client('ec2')
 
 instance_name_id = {}
 
-def list_instances(instanceID = None):
+def list_instances(instanceID = None, quiet = False):
     global instance_name_id
     instances = ec2.instances
     if (instanceID is not None):
@@ -18,10 +17,13 @@ def list_instances(instanceID = None):
     instance_name_id = {}
     for instance in instances:
         name = next((tag['Value'] for tag in instance.tags if tag['Key'] == 'Name'), '-')
-        info = '| {:<18s} | {:<18s} | {:<18s} | {:<18s} |'.format(name, instance.id, instance.instance_type, instance.state['Name'])
-        print(info)
         if (name != '-'):
             instance_name_id[name] = instance.id
+        if (quiet):
+            continue
+        info = '| {:<18s} | {:<18s} | {:<18s} | {:<18s} |'.format(name, instance.id, instance.instance_type, instance.state['Name'])
+        print(info)
+        
 
 def instances_action(instanceIDs, action):
     if type(instanceIDs) is str:
@@ -87,15 +89,17 @@ def ssh(instanceID):
 def help():
     print('Options:')
     print('     l, list                   - show instances and their status')
-    print('     u, up, start instance_id  - start instance by id')
-    print('     d, down, stop instance_id - stop instance by id')
-    print('     t, terminate  instance_id - terminate instance by id')
-    print('     c, create name [imageId] [instanceType] [keypair] [securityGroup] [--userScript=script.py]- create new instance')
+    print('     u, up, start instance-name  - start instance by id')
+    print('     d, down, stop instance-name - stop instance by id')
+    print('     t, terminate  instance-name - terminate instance by id')
+    print('     c, create instance-name [--imageId=ami-XXX] [--instanceType=t2.micro] [--keypair=keypair-name] [--securityGroup=sg-XXX] [--userScript=script.py] - create new instance')
     print('     x, exit                   - exit')
+    print('You can use both instance IDs or instance names in commands.')
 
 
 def main():
     help()
+    list_instances(quiet = True)
 
     while True:
         line = input('> ').split()
