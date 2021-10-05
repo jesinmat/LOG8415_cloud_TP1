@@ -1,3 +1,4 @@
 workspace.code-workspace
 credentials
 *.json
+hello.sh

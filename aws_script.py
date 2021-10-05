@@ -1,4 +1,6 @@
 import boto3
+import os.path
+from ast import literal_eval
 
 ec2 = boto3.resource('ec2')
 client = boto3.client('ec2')
@@ -48,14 +50,18 @@ def terminate(instanceIDs):
     print('Terminating instance...')
     return instances_action(instanceIDs, lambda ids: client.terminate_instances(InstanceIds=ids))
 
-def create(name, imageId = 'ami-09e67e426f25ce0d7', instanceType = 't2.micro', keypair = 'matyas-aws', secGroup = 'sg-01e98881f0ed9f1be'):
+def create(name, imageId = 'ami-09e67e426f25ce0d7', instanceType = 't2.micro', keypair = 'matyas-aws', secGroup = 'sg-07412473e0d10eda1', userScript = ''):
     print('Starting instance...')
+    if os.path.exists(userScript):
+        with open(userScript, 'r') as file:
+            userScript = file.read()
     return client.run_instances(ImageId=imageId,
                         InstanceType=instanceType,
                         MinCount=1,
                         MaxCount=1,
                         KeyName=keypair,
                         SecurityGroupIds=[secGroup],
+                        UserData=userScript,
                         TagSpecifications=[{
                             'ResourceType': 'instance',
                             'Tags': [
@@ -84,7 +90,7 @@ def help():
     print('     u, up, start instance_id  - start instance by id')
     print('     d, down, stop instance_id - stop instance by id')
     print('     t, terminate  instance_id - terminate instance by id')
-    print('     c, create name [imageId] [instanceType] [keypair] [securityGroup] - create new instance')
+    print('     c, create name [imageId] [instanceType] [keypair] [securityGroup] [--userScript=script.py]- create new instance')
     print('     x, exit                   - exit')
 
 
@@ -106,7 +112,9 @@ def main():
         elif (cmd in ('t', 'terminate')):
             terminate(line)
         elif (cmd in ('c', 'create')):
-            create(*line)
+            name = line.pop(0)
+            kwargs = dict((k.lstrip('--'), v) for k, v in (pair.split('=') for pair in line))
+            create(name, **kwargs)
         elif (cmd in ('ssh')):
             ssh(line)
 
