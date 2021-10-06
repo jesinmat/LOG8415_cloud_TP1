@@ -1,0 +1,4 @@
+IMAGE_ID = 'ami-09e67e426f25ce0d7'
+KEYPAIR_NAME = 'lightningbolt'
+SECURITY_GROUP = 'sg-07412473e0d10eda1'
+VPC_ID = 'vpc-073024149411a4a5a'

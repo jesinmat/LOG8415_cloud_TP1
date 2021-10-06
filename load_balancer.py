@@ -1,10 +1,36 @@
-def create_target_group(group_name : str, client):
+import boto3
+from constants import IMAGE_ID, KEYPAIR_NAME, SECURITY_GROUP, VPC_ID
+
+# Shamelessly copied from branch matyas
+def create_instances(cluster_nb, instanceType = 't2.micro', nb_instances = 1, imageId = IMAGE_ID, keypair = KEYPAIR_NAME, securityGroup = SECURITY_GROUP, userScript = ''):
+    print('Creating instance...')
+    if os.path.exists(userScript):
+        with open(userScript, 'r') as file:
+            userScript = file.read()
+    return client.run_instances(ImageId=imageId,
+                        InstanceType=instanceType,
+                        MinCount=nb_instances,
+                        MaxCount=nb_instances,
+                        KeyName=keypair,
+                        SecurityGroupIds=[securityGroup],
+                        UserData=userScript,
+                        TagSpecifications=[{
+                            'ResourceType': 'instance',
+                            'Tags': [
+                                {
+                                    'Key': 'Cluster',
+                                    'Value': cluster_nb
+                                },
+                            ]}],
+                        )
+
+def create_target_group(group_name, client):
     return client.create_target_group(
         Name=group_name,
         Protocol='HTTP',
         ProtocolVersion='HTTP1',
         Port=80,
-        VpcId='vpc-073024149411a4a5a',
+        VpcId=VPC_ID,
         HealthCheckEnabled=True,
         HealthCheckPath=f'/{group_name}',
         TargetType='instance',
@@ -12,6 +38,84 @@ def create_target_group(group_name : str, client):
             {
                 'Key': 'Name',
                 'Value': f'target-group-{group_name}'
+            },
+        ]
+    )
+
+def create_load_balancer(client):
+    #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.create_load_balancer
+    return client.create_load_balancer(
+        Name='insert-uncreative-name-here',
+        SecurityGroups=[
+            SECURITY_GROUP,
+        ],
+        Scheme='internet-facing',
+        Type='application',
+        IpAddressType='ipv4'
+    )
+
+def create_group_with_instances(cluster_nb, instance_type, client):
+    targets = []
+
+    resp = create_instances(cluster_nb, nb_instances=5, instanceType = instance_type)
+    
+    ids = [ instance['InstanceId'] for instance in resp['Instances'] ]
+    # Reference: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.register_targets
+    for i in ids:
+        targets.append({
+            'Id': i,
+            'Port': 80,
+            'AvailabilityZone': 'all' # TODO: should it really be 'all' ?
+        })
+
+    target_group = create_target_group(f'cluster-{cluster_nb}', client)
+    target_group_arn = target_group['TargetGroups'][0]['TargetGroupArn']
+
+    elbv2.register_targets(
+            TargetGroupArn=target_group_arn,
+            Targets=targets
+        )
+    return target_group_arn
+
+if __name__ = '__main__':
+    elbv2 = boto3.client('elbv2')
+    target_group_arns = []
+
+    load_balancer = create_load_balancer(elbv2)
+    load_balancer = load_balancer['LoadBalancers'][0]['LoadBalancerArn']
+
+    for cluster_nb, instance_type in enumerate(['m4.large', 't2.xlarge']):
+        target_group_arns.append( create_group_with_instances(cluster_nb, instance_type) )
+
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.create_listener
+    listener = elbv2.create_listener(
+        LoadBalancerArn=load_balancer,
+        Protocol='HTTP',
+        Port=80,
+        DefaultActions=[
+            {
+                'Type': 'forward',
+                'TargetGroupArn': target_group_arns[0],
+            },
+        ]
+    )
+
+    listener = listener['Listeners'][0]['ListenerArn']
+
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.create_rule
+    elbv2.create_rule(
+        ListenerArn=listener,
+        Conditions=[
+            {
+                'Field': 'path-pattern',
+                'Values': [ '/cluster2' ]
+            },
+        ],
+        Priority=1,
+        Actions=[
+            {
+                'Type': 'forward',
+                'TargetGroupArn': target_group_arns[1],
             },
         ]
     )
