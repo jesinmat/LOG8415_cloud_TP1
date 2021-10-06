@@ -52,7 +52,7 @@ def terminate(instanceIDs):
     print('Terminating instance...')
     return instances_action(instanceIDs, lambda ids: client.terminate_instances(InstanceIds=ids))
 
-def create(name, imageId = 'ami-09e67e426f25ce0d7', instanceType = 't2.micro', keypair = 'matyas-aws', securityGroup = 'sg-07412473e0d10eda1', userScript = ''):
+def create(name, imageId = 'ami-09e67e426f25ce0d7', instanceType = 't2.micro', keypair = 'lightningbolt', securityGroup = 'sg-07412473e0d10eda1', userScript = ''):
     print('Creating instance...')
     if os.path.exists(userScript):
         with open(userScript, 'r') as file:
@@ -82,7 +82,7 @@ def ssh(instanceID):
     instance = next((x for x in ec2.instances.filter(InstanceIds=instanceID)), None)
     if (instance is not None):
         print('Connecting to {0}...'.format(instance.public_ip_address))
-        subprocess.check_call(shlex.split('ssh.exe -i "C:\\Users\\Matyas\\.ssh\\matyas-aws.pem" ubuntu@{0}'.format(instance.public_ip_address)))
+        subprocess.check_call(shlex.split('ssh -i /home/pierre/Downloads/Poly/Cloud/lightningbolt.pem ubuntu@{0}'.format(instance.public_ip_address)))
         help()
 
 
@@ -127,5 +127,5 @@ def main():
         elif (cmd in ('x', 'exit')):
             break
     
-main()
-
+if __name__ == '__main__':
+    main()
