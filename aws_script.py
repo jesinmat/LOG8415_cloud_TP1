@@ -52,7 +52,7 @@ def terminate(instanceIDs):
     print('Terminating instance...')
     return instances_action(instanceIDs, lambda ids: client.terminate_instances(InstanceIds=ids))
 
-def create(name, imageId = 'ami-09e67e426f25ce0d7', instanceType = 't2.micro', keypair = 'matyas-aws', securityGroup = 'sg-07412473e0d10eda1', userScript = ''):
+def create(name, imageId = 'ami-09e67e426f25ce0d7', instanceType = 't2.micro', keypair = 'matyas-aws', securityGroup = 'sg-07412473e0d10eda1', userScript = '', availabilityZone = 'us-east-1a'):
     print('Creating instance...')
     if os.path.exists(userScript):
         with open(userScript, 'r') as file:
@@ -64,6 +64,9 @@ def create(name, imageId = 'ami-09e67e426f25ce0d7', instanceType = 't2.micro', k
                         KeyName=keypair,
                         SecurityGroupIds=[securityGroup],
                         UserData=userScript,
+                        Placement = {
+                            'AvailabilityZone': availabilityZone,
+                        },
                         TagSpecifications=[{
                             'ResourceType': 'instance',
                             'Tags': [

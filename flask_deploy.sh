@@ -14,13 +14,15 @@ sudo chmod 777 /etc/authbind/byport/80
 source venv/bin/activate
 pip3 install flask
 
+INSTANCEID=`ec2metadata --instance-id`
+
 cat <<EOF > app.py
 from flask import Flask
 app = Flask(__name__)
 
 @app.route('/')
 def my_app():
-    return 'First Flask application!'
+    return 'Flask application $INSTANCEID'
 
 EOF
 
