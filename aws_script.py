@@ -1,5 +1,6 @@
 import boto3
 import os.path
+import constants
 
 ec2 = boto3.resource('ec2')
 client = boto3.client('ec2')
@@ -52,15 +53,19 @@ def terminate(instanceIDs):
     print('Terminating instance...')
     return instances_action(instanceIDs, lambda ids: client.terminate_instances(InstanceIds=ids))
 
-def create(name, imageId = 'ami-09e67e426f25ce0d7', instanceType = 't2.micro', keypair = 'lightningbolt', securityGroup = 'sg-07412473e0d10eda1', userScript = '', availabilityZone = 'us-east-1a'):
+def create(name, 
+        imageId = constants.IMAGE_ID, instanceType = 't2.micro', 
+        keypair = constants.KEYPAIR_NAME, securityGroup = constants.SECURITY_GROUP,
+        userScript = '', availabilityZone = 'us-east-1a',
+        nbInstances = 1):
     print('Creating instance...')
     if os.path.exists(userScript):
         with open(userScript, 'r') as file:
             userScript = file.read()
     return client.run_instances(ImageId=imageId,
                         InstanceType=instanceType,
-                        MinCount=1,
-                        MaxCount=1,
+                        MinCount=nbInstances,
+                        MaxCount=nbInstances,
                         KeyName=keypair,
                         SecurityGroupIds=[securityGroup],
                         UserData=userScript,
@@ -85,9 +90,8 @@ def ssh(instanceID):
     instance = next((x for x in ec2.instances.filter(InstanceIds=instanceID)), None)
     if (instance is not None):
         print('Connecting to {0}...'.format(instance.public_ip_address))
-        subprocess.check_call(shlex.split('ssh -i /home/pierre/Downloads/Poly/Cloud/lightningbolt.pem ubuntu@{0}'.format(instance.public_ip_address)))
+        subprocess.check_call(shlex.split(constants.SSH_COMMAND.format(instance.public_ip_address)))
         help()
-
 
 def help():
     print('Options:')
@@ -103,7 +107,7 @@ def help():
 
 def main():
     help()
-    list_instances(quiet = True)
+    #list_instances(quiet = True)
 
     while True:
         line = input('> ').split()

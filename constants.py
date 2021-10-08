@@ -1,4 +1,5 @@
 IMAGE_ID = 'ami-09e67e426f25ce0d7'
 KEYPAIR_NAME = 'lightningbolt'
-SECURITY_GROUP = 'sg-07412473e0d10eda1'
+SECURITY_GROUP = 'sg-0c8ef7d0cfc620790'
 VPC_ID = 'vpc-073024149411a4a5a'
+SSH_COMMAND = 'ssh -i /home/pierre/Downloads/Poly/Cloud/lightningbolt.pem ubuntu@{0}'

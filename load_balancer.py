@@ -1,58 +1,52 @@
 import boto3
 from constants import IMAGE_ID, KEYPAIR_NAME, SECURITY_GROUP, VPC_ID
+import aws_script
 
-# Shamelessly copied from branch matyas
-def create_instances(cluster_nb, instanceType = 't2.micro', nb_instances = 1, imageId = IMAGE_ID, keypair = KEYPAIR_NAME, securityGroup = SECURITY_GROUP, userScript = ''):
-    print('Creating instance...')
-    if os.path.exists(userScript):
-        with open(userScript, 'r') as file:
-            userScript = file.read()
-    return client.run_instances(ImageId=imageId,
-                        InstanceType=instanceType,
-                        MinCount=nb_instances,
-                        MaxCount=nb_instances,
-                        KeyName=keypair,
-                        SecurityGroupIds=[securityGroup],
-                        UserData=userScript,
-                        TagSpecifications=[{
-                            'ResourceType': 'instance',
-                            'Tags': [
-                                {
-                                    'Key': 'Cluster',
-                                    'Value': cluster_nb
-                                },
-                            ]}],
-                        )
+class AmazonManager:
+    def __init__(self, keypair = KEYPAIR_NAME):
+        self.ec2_resource = boto3.resource('ec2')
+        self.ec2 = boto3.client('ec2')
+        self.elbv2 = boto3.client('elbv2')
+        self.keypair = keypair
 
-def create_target_group(group_name, client):
-    return client.create_target_group(
-        Name=group_name,
-        Protocol='HTTP',
-        ProtocolVersion='HTTP1',
-        Port=80,
-        VpcId=VPC_ID,
-        HealthCheckEnabled=True,
-        HealthCheckPath=f'/{group_name}',
-        TargetType='instance',
-        Tags=[
-            {
-                'Key': 'Name',
-                'Value': f'target-group-{group_name}'
-            },
-        ]
-    )
+class SubCluster:
+    def __init__(self, parent, cluster_nb, instanceType = 't2.micro'):
+        self.parent = parent
+        self.instance_type = instanceType
+        self.cluster_nb = cluster_nb
 
-def create_load_balancer(client):
-    #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.create_load_balancer
-    return client.create_load_balancer(
-        Name='insert-uncreative-name-here',
-        SecurityGroups=[
-            SECURITY_GROUP,
-        ],
-        Scheme='internet-facing',
-        Type='application',
-        IpAddressType='ipv4'
-    )
+    def create_instances(self, nb_instances = 1, imageId = IMAGE_ID, securityGroup = SECURITY_GROUP, userScript = '', zone = 'us-east-1a'):
+        return aws_script.create()
+
+    def create_target_group(self):
+        return parent.ec2.create_target_group(
+            Name=f'cluster-{self.cluster_nb}',
+            Protocol='HTTP',
+            ProtocolVersion='HTTP1',
+            Port=80,
+            VpcId=VPC_ID,
+            HealthCheckEnabled=True,
+            HealthCheckPath=f'/cluster{self.cluster_nb}',
+            TargetType='instance',
+            Tags=[
+                {
+                    'Key': 'Name',
+                    'Value': f'target-group-{self.cluster_nb}'
+                },
+            ]
+        )
+
+    def create_load_balancer(self):
+        #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.create_load_balancer
+        return client.create_load_balancer(
+            Name='insert-uncreative-name-here',
+            SecurityGroups=[
+                SECURITY_GROUP,
+            ],
+            Scheme='internet-facing',
+            Type='application',
+            IpAddressType='ipv4'
+        )
 
 def create_group_with_instances(cluster_nb, instance_type, client):
     targets = []
