@@ -58,7 +58,7 @@ class AmazonManager:
         #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.create_load_balancer
         print('Create load balancer')
         resp = self.elbv2.create_load_balancer(
-            Name=self.batch_name,
+            Name='load-balancer-version-one',
             Subnets = [subnet.id for subnet in self.ec2_resource.subnets.filter()],
             SecurityGroups=[ SECURITY_GROUP ],
             Scheme='internet-facing',
@@ -171,7 +171,7 @@ class SubCluster:
             Tags=[
                 {
                     'Key': 'Name',
-                    'Value': f'{self.parent.batch_name}-target-group-{self.cluster_nb}'
+                    'Value': f'target-group-{self.cluster_nb}'
                 },
             ]
         )
