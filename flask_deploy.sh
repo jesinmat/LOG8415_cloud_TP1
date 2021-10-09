@@ -16,16 +16,16 @@ pip3 install flask
 
 INSTANCEID=`ec2metadata --instance-id`
 
-cat <<EOF > app.py
+cat <<EOF > /home/ubuntu/app.py
 from flask import Flask
 app = Flask(__name__)
 
-@app.route('/')
+@app.route('/cluster%s')
 def my_app():
     return 'Flask application $INSTANCEID'
 
 EOF
 
-export FLASK_APP=app
+export FLASK_APP=/home/ubuntu/app.py
 authbind --deep flask run --host 0.0.0.0 --port 80
 # flask run --host 0.0.0.0

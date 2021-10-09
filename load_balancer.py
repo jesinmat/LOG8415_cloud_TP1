@@ -26,6 +26,7 @@ class AmazonManager:
         self.rule_arn = ''
         self.dns_name = ''
         self.batch_name = create_random_name()
+        print('Starting batch ' + self.batch_name)
 
         self.setup()
 
@@ -44,6 +45,11 @@ class AmazonManager:
 
         self.create_listener(self.children[0])
         self.create_rule(self.children[1])
+
+        print('Waiting for heath checks (might take ~5 minutes)...')
+        for child in self.children:
+            child.wait_for_group()
+        print('Everything set up!')
 
     def shutdown(self):
         self.delete_rule()
@@ -149,14 +155,15 @@ class SubCluster:
     def htmlpath(self):
         return f'/cluster{self.cluster_nb}'
 
-    def create_instances(self, imageId = IMAGE_ID, securityGroup = SECURITY_GROUP, userScript = '', zone = 'us-east-1a'):
-        print('Create 3 instances')
-        resp = aws_script.create(name = f'{self.parent.batch_name}-{self.cluster_nb}-{self.instance_type}-instance', availabilityZone = zone, nbInstances=3)
-        self.instance_ids = [ instance['InstanceId'] for instance in resp['Instances'] ]
+    def create_instances(self, imageId = IMAGE_ID, securityGroup = SECURITY_GROUP, zone = 'us-east-1a'):
+        print('Create 4 instances')
 
-        print('Create 2 instances')
-        resp = aws_script.create(name = f'{self.parent.batch_name}-{self.cluster_nb}-{self.instance_type}-instance', availabilityZone = zone, nbInstances=2)
-        self.instance_ids += [ instance['InstanceId'] for instance in resp['Instances'] ]
+        with open('flask_deploy.sh', 'r') as file:
+            script = file.read() % self.cluster_nb
+
+        resp = aws_script.create(name = f'{self.parent.batch_name}-{self.cluster_nb}-{self.instance_type}-instance', 
+            availabilityZone = zone, nbInstances=4, userScript=script)
+        self.instance_ids = [ instance['InstanceId'] for instance in resp['Instances'] ]
 
         waiter = self.parent.ec2.get_waiter('instance_running')
         waiter.wait(InstanceIds=self.instance_ids)
@@ -186,6 +193,11 @@ class SubCluster:
         print('Delete target group')
         #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.delete_target_group
         resp = self.parent.elbv2.delete_target_group(TargetGroupArn=self.target_group_arn)
+
+    def wait_for_group(self):
+        #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Waiter.TargetInService
+        waiter = self.parent.elbv2.get_waiter('target_in_service')
+        waiter.wait( TargetGroupArn=self.target_group_arn )
 
 if __name__ == '__main__':
     manager = AmazonManager()
