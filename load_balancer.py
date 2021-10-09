@@ -21,10 +21,10 @@ class AmazonManager:
         self.elbv2 = boto3.client('elbv2')
         self.keypair = keypair
         self.children = [None, None]
-        self.load_balancer_arn = ''
-        self.listener_arn = ''
-        self.rule_arn = ''
-        self.dns_name = ''
+        self.load_balancer_arn = None
+        self.listener_arn = None
+        self.rule_arn = None
+        self.dns_name = None
         self.batch_name = create_random_name()
         print('Starting batch ' + self.batch_name)
 
@@ -75,9 +75,10 @@ class AmazonManager:
         self.dns_name = resp['LoadBalancers'][0]['DNSName']
 
     def delete_load_balancer(self):
-        #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.delete_load_balancer
-        print('Delete load balancer')
-        self.elbv2.delete_load_balancer(LoadBalancerArn=self.load_balancer_arn)
+        if self.load_balancer_arn:
+            print('Delete load balancer')
+            #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.delete_load_balancer
+            self.elbv2.delete_load_balancer(LoadBalancerArn=self.load_balancer_arn)
 
     def create_listener(self, child):
         print('Create listener')
@@ -96,9 +97,10 @@ class AmazonManager:
         self.listener_arn = listener['Listeners'][0]['ListenerArn']
 
     def delete_listener(self):
-        print('Delete listener')
-        #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.delete_listener
-        self.elbv2.delete_listener(ListenerArn=self.listener_arn)
+        if self.listener_arn:
+            print('Delete listener')
+            #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.delete_listener
+            self.elbv2.delete_listener(ListenerArn=self.listener_arn)
 
     def create_rule(self, child):
         print('Create rule')
@@ -122,9 +124,10 @@ class AmazonManager:
         self.rule_arn = resp['Rules'][0]['RuleArn']
 
     def delete_rule(self):
-        print('Delete rule')
-        #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.delete_listener
-        self.elbv2.delete_rule(RuleArn=self.rule_arn)
+        if self.rule_arn:
+            print('Delete rule')
+            #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.delete_listener
+            self.elbv2.delete_rule(RuleArn=self.rule_arn)
 
 class SubCluster:
     def __init__(self, parent, cluster_nb, instanceType = 't2.micro'):
@@ -132,20 +135,24 @@ class SubCluster:
         self.instance_type = instanceType
         self.cluster_nb = cluster_nb
         self.instance_ids = []
-        self.target_group_arn = ''
+        self.target_group_arn = None
 
     def setup(self):
-        self.create_instances()
+        try:
+            self.create_instances()
 
-        self.create_target_group()
-        
-        # Reference: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.register_targets
-        targets = [ { 'Id': i, 'Port': 80 } for i in self.instance_ids]
+            self.create_target_group()
+            
+            # Reference: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.register_targets
+            targets = [ { 'Id': i, 'Port': 80 } for i in self.instance_ids]
 
-        self.parent.elbv2.register_targets(
-                TargetGroupArn=self.target_group_arn,
-                Targets=targets
-            )
+            self.parent.elbv2.register_targets(
+                    TargetGroupArn=self.target_group_arn,
+                    Targets=targets
+                )
+        except Exception as x:
+            print(x)
+            self.shutdown()
 
     def shutdown(self):
         self.delete_target_group()
@@ -190,9 +197,10 @@ class SubCluster:
         return self.target_group_arn
 
     def delete_target_group(self):
-        print('Delete target group')
-        #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.delete_target_group
-        resp = self.parent.elbv2.delete_target_group(TargetGroupArn=self.target_group_arn)
+        if self.target_group_arn:
+            print('Delete target group')
+            #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.delete_target_group
+            resp = self.parent.elbv2.delete_target_group(TargetGroupArn=self.target_group_arn)
 
     def wait_for_group(self):
         #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Waiter.TargetInService
@@ -201,9 +209,8 @@ class SubCluster:
 
 if __name__ == '__main__':
     manager = AmazonManager()
-    while True:
-        print(f'Your load balancer is deployed at {manager.dns_name}. It might take a few minutes to come online.')
-        i = input('Press y to quit.')
-        if i == 'y':
-            break
+
+    print(f'Your load balancer is deployed at {manager.dns_name}.')
+    i = input('Press ENTER to quit.')
+
     manager.shutdown()
