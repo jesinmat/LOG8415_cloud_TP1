@@ -13,7 +13,7 @@ def create_random_name():
     return ans
 
 class AmazonManager:
-    INSTANCE_TYPE_LIST = ['t2.micro', 't2.micro'] #['m4.large', 't2.xlarge']
+    INSTANCE_TYPE_LIST = ['m4.large', 't2.xlarge']
 
     def __init__(self, keypair = KEYPAIR_NAME):
         self.ec2_resource = boto3.resource('ec2')
@@ -51,13 +51,14 @@ class AmazonManager:
             child.wait_for_group()
         print('Everything set up!')
 
-    def __del__(self):
+    def shutdown(self):
         self.delete_rule()
         self.delete_listener()
 
         self.delete_load_balancer()
 
-        #It is not necessary to delete both children, because this contained the only reference to them -> they will be destroyed automatically very soon
+        for child in self.children:
+            child.shutdown()
 
     def create_load_balancer(self):
         #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.create_load_balancer
