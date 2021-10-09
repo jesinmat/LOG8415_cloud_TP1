@@ -98,7 +98,7 @@ class AmazonManager:
         print('Create rule')
         # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.create_rule
         resp = self.elbv2.create_rule(
-            ListenerArn=listener,
+            ListenerArn=self.listener_arn,
             Conditions=[
                 {
                     'Field': 'path-pattern',
@@ -150,9 +150,13 @@ class SubCluster:
         return f'/cluster{self.cluster_nb}'
 
     def create_instances(self, imageId = IMAGE_ID, securityGroup = SECURITY_GROUP, userScript = '', zone = 'us-east-1a'):
-        print('Create instances')
-        resp = aws_script.create(name = f'{self.parent.batch_name}-{self.cluster_nb}-{self.instance_type}-instance', availabilityZone = zone, nbInstances=5)
+        print('Create 3 instances')
+        resp = aws_script.create(name = f'{self.parent.batch_name}-{self.cluster_nb}-{self.instance_type}-instance', availabilityZone = zone, nbInstances=3)
         self.instance_ids = [ instance['InstanceId'] for instance in resp['Instances'] ]
+
+        print('Create 2 instances')
+        resp = aws_script.create(name = f'{self.parent.batch_name}-{self.cluster_nb}-{self.instance_type}-instance', availabilityZone = zone, nbInstances=2)
+        self.instance_ids += [ instance['InstanceId'] for instance in resp['Instances'] ]
 
         waiter = self.parent.ec2.get_waiter('instance_running')
         waiter.wait(InstanceIds=self.instance_ids)
