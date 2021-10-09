@@ -16,7 +16,9 @@ def list_instances(instanceID = None, quiet = False):
     
     instance_name_id = {}
     for instance in instances:
-        name = next((tag['Value'] for tag in instance.tags if tag['Key'] == 'Name'), '-')
+        name = '-'
+        if (instance.tags):
+            name = next((tag['Value'] for tag in instance.tags if tag['Key'] == 'Name'), '-')
         if (name != '-'):
             instance_name_id[name] = instance.id
         if (quiet):
