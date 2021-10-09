@@ -169,7 +169,7 @@ class SubCluster:
             script = file.read() % self.cluster_nb
 
         resp = aws_script.create(name = f'{self.parent.batch_name}-{self.cluster_nb}-{self.instance_type}-instance', 
-            availabilityZone = zone, nbInstances=4, userScript=script)
+            availabilityZone = zone, nbInstances=4, userScript=script, instanceType = self.instance_type)
         self.instance_ids = [ instance['InstanceId'] for instance in resp['Instances'] ]
 
         waiter = self.parent.ec2.get_waiter('instance_running')
