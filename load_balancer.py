@@ -51,14 +51,13 @@ class AmazonManager:
             child.wait_for_group()
         print('Everything set up!')
 
-    def shutdown(self):
+    def __del__(self):
         self.delete_rule()
         self.delete_listener()
 
         self.delete_load_balancer()
 
-        for child in self.children:
-            child.shutdown()
+        #It is not necessary to delete both children, because this contained the only reference to them -> they will be destroyed automatically very soon
 
     def create_load_balancer(self):
         #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.create_load_balancer
