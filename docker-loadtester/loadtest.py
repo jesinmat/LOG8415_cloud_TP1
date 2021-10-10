@@ -1,4 +1,5 @@
 from datetime import datetime
+import dateutil.tz
 import aiohttp
 import asyncio
 
@@ -51,7 +52,7 @@ class SimpleLogger():
             self.file = open(file, 'w+')
     
     def log(self, message):
-        time = datetime.now().strftime("%H:%M:%S")
+        time = datetime.now(dateutil.tz.gettz('America/Montreal')).strftime("%H:%M:%S")
         contents = f'[{time}]: {message}'
         print(contents)
         if (self.file is not None):
