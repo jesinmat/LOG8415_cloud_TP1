@@ -20,7 +20,7 @@ cat <<EOF > app.py
 from flask import Flask
 app = Flask(__name__)
 
-@app.route('/')
+@app.route('/cluster%s')
 def my_app():
     return 'Flask application $INSTANCEID'
 

@@ -1,5 +1,6 @@
 import boto3
 import os.path
+import constants
 
 ec2 = boto3.resource('ec2')
 client = boto3.client('ec2')
@@ -54,15 +55,19 @@ def terminate(instanceIDs):
     print('Terminating instance...')
     return instances_action(instanceIDs, lambda ids: client.terminate_instances(InstanceIds=ids))
 
-def create(name, imageId = 'ami-09e67e426f25ce0d7', instanceType = 't2.micro', keypair = 'matyas-aws', securityGroup = 'sg-07412473e0d10eda1', userScript = '', availabilityZone = 'us-east-1a'):
+def create(
+        imageId = constants.IMAGE_ID, instanceType = 't2.micro',
+        keypair = constants.KEYPAIR_NAME, securityGroup = constants.SECURITY_GROUP,
+        userScript = '', availabilityZone = 'us-east-1a',
+        nbInstances = 1, tags = [], monitoring = False):
     print('Creating instance...')
     if os.path.exists(userScript):
         with open(userScript, 'r') as file:
             userScript = file.read()
     return client.run_instances(ImageId=imageId,
                         InstanceType=instanceType,
-                        MinCount=1,
-                        MaxCount=1,
+                        MinCount=nbInstances,
+                        MaxCount=nbInstances,
                         KeyName=keypair,
                         SecurityGroupIds=[securityGroup],
                         UserData=userScript,
@@ -71,13 +76,12 @@ def create(name, imageId = 'ami-09e67e426f25ce0d7', instanceType = 't2.micro', k
                         },
                         TagSpecifications=[{
                             'ResourceType': 'instance',
-                            'Tags': [
-                                {
-                                    'Key': 'Name',
-                                    'Value': name
-                                },
-                            ]}],
-                        )
+                            'Tags': tags
+                        }],
+                        Monitoring={
+                            'Enabled': monitoring
+                        }
+                    )
 
 def ssh(instanceID):
     import subprocess, shlex
@@ -87,9 +91,8 @@ def ssh(instanceID):
     instance = next((x for x in ec2.instances.filter(InstanceIds=instanceID)), None)
     if (instance is not None):
         print('Connecting to {0}...'.format(instance.public_ip_address))
-        subprocess.check_call(shlex.split('ssh.exe -i "C:\\Users\\Matyas\\.ssh\\matyas-aws.pem" ubuntu@{0}'.format(instance.public_ip_address)))
+        subprocess.check_call(shlex.split(constants.SSH_COMMAND.format(instance.public_ip_address)))
         help()
-
 
 def help():
     print('Options:')
@@ -124,7 +127,10 @@ def main():
         elif (cmd in ('c', 'create')):
             name = line.pop(0)
             kwargs = dict((k.lstrip('--'), v) for k, v in (pair.split('=') for pair in line))
-            create(name, **kwargs)
+            tags = [
+                { 'Key': 'Name', 'Value': name },
+            ]
+            create(tags = tags, **kwargs)
         elif (cmd in ('ssh')):
             ssh(line)
 
@@ -132,5 +138,5 @@ def main():
         elif (cmd in ('x', 'exit')):
             break
     
-main()
-
+if __name__ == '__main__':
+    main()

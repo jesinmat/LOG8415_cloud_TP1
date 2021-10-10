@@ -1,14 +1,14 @@
 import boto3
 import json
 
-client = boto3.client('cloudwatch')
+
 
 class MetricWidgetOptions:
-    def __init__(self, metrics, title):
+    def __init__(self, metrics, title, statType = 'Maximum'):
         self.metrics = [metric.toArray() for metric in metrics]
         self.title = title
         self.view = 'timeSeries'
-        self.stat = 'Maximum'
+        self.stat = statType
         self.period = 60
         self.stacked = False
         self.yAxis = { 'left': { 'min': 0} }
@@ -27,7 +27,7 @@ class MetricWidget:
     def __init__(self, options):
         self.options = options
 
-    def saveImage(self, dest):
+    def saveImage(self, dest, client):
         response = client.get_metric_widget_image(
             MetricWidget = self.options.toJSON(),
             OutputFormat='png'
@@ -37,9 +37,17 @@ class MetricWidget:
                 file.write(response['MetricWidgetImage'])
 
 
+class MetricSource:
+    EC2 = 'AWS/EC2'
+    APPLICATION_LOAD_BALANCER = 'AWS/ApplicationELB'
+
+class MetricIdentifierType:
+    EC2_INSTANCEID = 'InstanceId'
+    LOAD_BALANCER = 'LoadBalancer'
+
 class Metric:
-    def __init__(self, name, instanceID, label, yAxisSide = 'left'):
-        self.data = ['AWS/EC2', name, 'InstanceId', instanceID, { 'label': label, 'yAxis' : yAxisSide }]
+    def __init__(self, source, name, identifierType, instanceID, label, yAxisSide = 'left'):
+        self.data = [source, name, identifierType, instanceID, { 'label': label, 'yAxis' : yAxisSide }]
 
     def toJSON(self):
         return json.dumps(self.data)
@@ -54,4 +62,4 @@ def main():
     opts = MetricWidgetOptions([cpuutil, netin], "Testing title")
     MetricWidget(opts).saveImage('test.png')
 
-main()
+#main()
