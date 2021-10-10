@@ -6,12 +6,3 @@
     - You can then use `c custom-instance-name --userScript=flask_deploy.sh` to install everything and deploy flask app on port 80.
 
 - aws-skripty.sh - bash version of some basic AWS commands. Do not use.
-
-# Launching instances
-
-# Creating clusters
-
-Just follow https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-application-load-balancer.html exactly.
-
-Edit your Flask apps so that half of them returns something for '/cluster1' and the other half returns something for '/cluster2'.
-Also, every app should return something for '/', since '/' is used by Amazon to check the health of your server.
