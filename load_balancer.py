@@ -1,5 +1,5 @@
 import boto3
-from constants import IMAGE_ID, KEYPAIR_NAME, SECURITY_GROUP, VPC_ID
+from constants import KEYPAIR_NAME
 import aws_script
 import threading
 import random
@@ -25,12 +25,15 @@ class AmazonManager:
         self.listener_arn = None
         self.rule_arn = None
         self.dns_name = None
+        self.vpc = next(iter(self.ec2_resource.vpc.all()))
         self.batch_name = create_random_name()
         print('Starting batch ' + self.batch_name)
 
         self.setup()
 
     def setup(self):
+        self.create_security_group()
+
         threads = []
         for cluster_nb, instance_type in enumerate(AmazonManager.INSTANCE_TYPE_LIST):
             self.children[cluster_nb] = SubCluster(self, cluster_nb+1, instance_type)
@@ -60,13 +63,15 @@ class AmazonManager:
         for child in self.children:
             child.shutdown()
 
+        self.delete_security_group()
+
     def create_load_balancer(self):
         #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.create_load_balancer
         print('Create load balancer')
         resp = self.elbv2.create_load_balancer(
             Name='load-balancer-version-one',
             Subnets = [subnet.id for subnet in self.ec2_resource.subnets.filter()],
-            SecurityGroups=[ SECURITY_GROUP ],
+            SecurityGroups=[ self.security_group ],
             Scheme='internet-facing',
             Type='application',
             IpAddressType='ipv4'
@@ -129,13 +134,24 @@ class AmazonManager:
             #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.delete_listener
             self.elbv2.delete_rule(RuleArn=self.rule_arn)
 
+    def create_security_group(self):
+        response = self.vpc.create_security_group(
+            Description='Allow ssh and http',
+            GroupName='my-security-group-version-one',
+        )
+        self.security_group = response['GroupId']
+
+    def delete_security_group(self):
+        self.ec2_resource.delete_security_group(self.security_group)
+
 class SubCluster:
-    def __init__(self, parent, cluster_nb, instanceType = 't2.micro'):
+    def __init__(self, parent, cluster_nb, instanceType = 't2.micro', zone = 'us-east-1a'):
         self.parent = parent
         self.instance_type = instanceType
         self.cluster_nb = cluster_nb
         self.instance_ids = []
         self.target_group_arn = None
+        self.zone = zone
 
     def setup(self):
         try:
@@ -162,14 +178,22 @@ class SubCluster:
     def htmlpath(self):
         return f'/cluster{self.cluster_nb}'
 
-    def create_instances(self, imageId = IMAGE_ID, securityGroup = SECURITY_GROUP, zone = 'us-east-1a'):
+    def create_instances(self):
         print('Create 4 instances')
 
         with open('flask_deploy.sh', 'r') as file:
             script = file.read() % self.cluster_nb
 
-        resp = aws_script.create(name = f'{self.parent.batch_name}-{self.cluster_nb}-{self.instance_type}-instance', 
-            availabilityZone = zone, nbInstances=4, userScript=script, instanceType = self.instance_type)
+        tags = [
+            { 'Key': 'Name', 'Value': f'{self.parent.batch_name}-{self.cluster_nb}-{self.instance_type}' },
+            { 'Key': 'Batch', 'Value': self.parent.batch_name },
+            { 'Key': 'Cluster', 'Value': self.cluster_nb }
+        ]
+
+        resp = aws_script.create(
+            availabilityZone=self.zone, nbInstances=4, userScript=script, instanceType = self.instance_type, tags=tags, imageId=UBUNTU_IMAGE_ID, 
+            securityGroup=self.parent.security_group
+        )
         self.instance_ids = [ instance['InstanceId'] for instance in resp['Instances'] ]
 
         waiter = self.parent.ec2.get_waiter('instance_running')
@@ -182,7 +206,7 @@ class SubCluster:
             Protocol='HTTP',
             ProtocolVersion='HTTP1',
             Port=80,
-            VpcId=VPC_ID,
+            VpcId=self.parent.vpc.id,
             HealthCheckEnabled=True,
             HealthCheckPath=self.htmlpath(),
             TargetType='instance',
