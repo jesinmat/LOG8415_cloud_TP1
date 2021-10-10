@@ -141,8 +141,10 @@ class AmazonManager:
     def create_security_group(self):
         SECURITY_GROUP_NAME = 'my-security-group-version-one'
         print('Create security group')
-        sec_groups = self.ec2.describe_security_groups(GroupNames=[ SECURITY_GROUP_NAME ])
-        if sec_groups['SecurityGroups'] == []:
+        try:
+            sec_groups = self.ec2.describe_security_groups(GroupNames=[ SECURITY_GROUP_NAME ])
+            self.security_group = sec_groups['SecurityGroups'][0]['GroupId']
+        except botocore.exceptions.ClientError:
             response = self.vpc.create_security_group(
                 Description='Allow ssh and http',
                 GroupName=SECURITY_GROUP_NAME,
@@ -161,8 +163,6 @@ class AmazonManager:
                     },
                 ],
             )
-        else:
-            self.security_group = sec_groups['SecurityGroups'][0]['GroupId']
 
     def delete_security_group(self):
         print('Delete security group')
