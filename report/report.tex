@@ -33,10 +33,30 @@ respect the format of the submission. Please use LaTeX!
 
 \section{Deployment Procedure}
 
+There are five resources that need to be deployed:
+\begin{itemize}
+	\item Create a security group allowing the resources to be accessed from port 22 (SSH) and port 80 (HTTP).
+	\item Start eight EC2 instances, four of each type. Deploy a Flask app on each on them.
+	\item Create two target groups, and register four instances with each target group.
+	\item Create a load balancer.
+	\item Set two rules for the load balancer: redirect requests for /cluster1 to the first and requests for /cluster2 to the second target group.
+\end{itemize}
+
+Due to the dependencies between these resources, they need to be created in exactly that order and shut down in the reverse order.
+
+In order to deploy the Flask app on all the instances, we used the userScript parameter of the Amazon API. This allows to give the instance a script that will be run at startup. Our script installs all necessary packages, create an app.py file for Flask, and deploys a Flask server on port 80.
+
 \section{Benchmarking}
 
 \section{Results}
 
-\section{Reproducing the benchmarks}
+\section{Installation steps}
+
+\begin{enumerate}
+	\item Clone our Git repository and navigate into it: \\
+	\verb|git clone git@github.com:jesinmat/LOG8415_cloud_TP1.git && cd LOG8415_cloud_TP1|
+	\item Configure your credentials: get your credentials by logging in to Vocareum, then paste them into \verb|~/.aws/credentials|
+	\item Deploy the Amazon resources: \verb|python3 load_balancer.py|
+\end{enumerate}
 
 \end{document}
