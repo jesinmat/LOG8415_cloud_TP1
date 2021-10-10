@@ -24,7 +24,7 @@ class AmazonManager:
         self.ec2 = boto3.client('ec2')
         self.elbv2 = boto3.client('elbv2')
         self.keypair = keypair
-        self.children = [None, None]
+        self.children = []
         self.load_balancer_arn = None
         self.listener_arn = None
         self.rules_arn = []
@@ -42,7 +42,7 @@ class AmazonManager:
 
             threads = []
             for cluster_nb, instance_type in enumerate(AmazonManager.INSTANCE_TYPE_LIST):
-                self.children[cluster_nb] = SubCluster(self, cluster_nb+1, instance_type)
+                self.children.append( SubCluster(self, cluster_nb+1, instance_type) )
                 thread = threading.Thread(target=self.children[cluster_nb].setup)
                 thread.start()
                 threads.append( thread )
@@ -53,12 +53,15 @@ class AmazonManager:
             for thread in threads:
                 thread.join()
 
-            self.create_rule(self.children[0])
-            self.create_rule(self.children[1])
-
-            print('Waiting for health checks (might take 5-10 minutes)...')
             for child in self.children:
-                child.wait_for_group()
+                self.create_rule(child)
+
+            y = input('Do you want to wait for health checks [y/n]?'+
+                ' Your application will not be online before health checks are passed. They might take 5-10 minutes.')
+            if y != 'n':
+                print('Waiting for health checks (might take 5-10 minutes)...')
+                for child in self.children:
+                    child.wait_for_group()
             print('Everything set up!')
         except Exception as x:
             self.shutdown()
@@ -72,6 +75,8 @@ class AmazonManager:
 
         for child in self.children:
             child.shutdown()
+        for child in self.children:
+            child.wait_for_shutdown()
 
         self.delete_security_group()
 
@@ -171,37 +176,38 @@ class AmazonManager:
         try:
             sec_groups = self.ec2.describe_security_groups(GroupNames=[ SECURITY_GROUP_NAME ])
             self.security_group = sec_groups['SecurityGroups'][0]['GroupId']
-        except botocore.exceptions.ClientError:
+        except botocore.exceptions.ClientError as x:
             response = self.vpc.create_security_group(
                 Description='Allow ssh and http',
                 GroupName=SECURITY_GROUP_NAME,
             )
             self.security_group = response.group_id
-            self.ec2.modify_security_group_rules(
+            #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.Client.authorize_security_group_ingress
+            self.ec2.authorize_security_group_ingress(
                 GroupId=self.security_group,
-                SecurityGroupRules=[
+                IpPermissions=[
                     {
-                        'SecurityGroupRule': {
-                            'IpProtocol': 'tcp',
-                            'FromPort': 80, 'ToPort': 80,
-                            'CidrIpv4': '0.0.0.0/0', 'CidrIpv6': '::0/0',
-                        } 
+                        'FromPort': 80,
+                        'ToPort': 80,
+                        'IpProtocol': 'tcp',
+                        'IpRanges': [{'CidrIp': '0.0.0.0/0' }],
+                        'Ipv6Ranges': [{ 'CidrIpv6': '::0/0' }],
                     },
                     {
-                        'SecurityGroupRule': {
-                            'IpProtocol': 'tcp',
-                            'FromPort': 22, 'ToPort': 22,
-                            'CidrIpv4': '0.0.0.0/0', 'CidrIpv6': '::0/0',
-                        }
+                        'FromPort': 22,
+                        'ToPort': 22,
+                        'IpProtocol': 'tcp',
+                        'IpRanges': [{'CidrIp': '0.0.0.0/0' }],
+                        'Ipv6Ranges': [{ 'CidrIpv6': '::0/0' }],
                     },
-                ],
+                ]
             )
 
     def delete_security_group(self):
         if self.security_group:
             print('Delete security group')
             #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.Client.delete_security_group
-            self.ec2.delete_security_group(self.security_group)
+            self.ec2.delete_security_group(GroupId=self.security_group)
             self.security_group = None
 
 class SubCluster:
@@ -234,6 +240,11 @@ class SubCluster:
         self.delete_target_group()
 
         aws_script.terminate(self.instance_ids)
+
+    def wait_for_shutdown(self):
+        print('Waiting for instances to terminate...')
+        waiter = self.parent.ec2.get_waiter('instance_terminated')
+        waiter.wait( InstanceIds=self.instance_ids )
         self.instance_ids = []
 
     def htmlpath(self):
