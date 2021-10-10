@@ -1,9 +1,10 @@
 import boto3
 import botocore
-from constants import KEYPAIR_NAME, IMAGE_ID
 import aws_script
 import threading
 import random
+
+IMAGE_ID = 'ami-09e67e426f25ce0d7'
 
 vocals = 'aeiou'
 consonants = 'bcdfghjklmnpqrstvwxz'
@@ -19,11 +20,10 @@ class AmazonManager:
         {'type': 't2.micro', 'zone': 'us-east-1b'},
     ] #['m4.large', 't2.xlarge']
 
-    def __init__(self, keypair = KEYPAIR_NAME):
+    def __init__(self):
         self.ec2_resource = boto3.resource('ec2')
         self.ec2 = boto3.client('ec2')
         self.elbv2 = boto3.client('elbv2')
-        self.keypair = keypair
         self.children = []
         self.load_balancer_arn = None
         self.listener_arn = None
