@@ -13,7 +13,10 @@ def create_random_name():
     return ans
 
 class AmazonManager:
-    INSTANCE_TYPE_LIST = ['t2.micro', 't2.micro'] #['m4.large', 't2.xlarge']
+    INSTANCE_TYPE_LIST = [
+        {'type': 't2.micro', 'zone': 'us-east-1a'},
+        {'type': 't2.micro', 'zone': 'us-east-1b'},
+    ] #['m4.large', 't2.xlarge']
 
     def __init__(self, keypair = KEYPAIR_NAME):
         self.ec2_resource = boto3.resource('ec2')
@@ -166,13 +169,13 @@ class AmazonManager:
         self.ec2_resource.delete_security_group(self.security_group)
 
 class SubCluster:
-    def __init__(self, parent, cluster_nb, instanceType = 't2.micro', zone = 'us-east-1a'):
+    def __init__(self, parent, cluster_nb, instanceType = {'type': 't2.micro', 'zone': 'us-east-1a'}):
         self.parent = parent
-        self.instance_type = instanceType
+        self.instance_type = instanceType['type']
         self.cluster_nb = cluster_nb
         self.instance_ids = []
         self.target_group_arn = None
-        self.zone = zone
+        self.zone = instanceType['zone']
 
     def setup(self):
         try:
