@@ -1,6 +1,10 @@
 workspace.code-workspace
 credentials
 *.json
+*.aux
+*.log
+*.synctex.gz
+report.pdf
 *.png
 __pycache__/
 log.txt
