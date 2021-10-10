@@ -1,0 +1,5 @@
+IMAGE_ID = 'ami-IMAGE-ID-HERE'
+KEYPAIR_NAME = 'YOUR-KEYPAIR-NAME'
+SECURITY_GROUP = 'sg-DEFAULT-SECGROUP'
+VPC_ID = 'vpc-YOUR-VPC-ID'
+SSH_COMMAND = 'ssh.exe -i "path/to/your/key.pem" ubuntu@{0}'
