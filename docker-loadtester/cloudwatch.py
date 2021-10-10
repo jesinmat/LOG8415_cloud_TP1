@@ -21,6 +21,21 @@ class MetricWidgetOptions:
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__, 
             sort_keys=False, indent=4)
+        
+
+class MetricWidget:
+    def __init__(self, options):
+        self.options = options
+
+    def saveImage(self, dest):
+        response = client.get_metric_widget_image(
+            MetricWidget = self.options.toJSON(),
+            OutputFormat='png'
+        )
+
+        with open(dest, "wb") as file:
+                file.write(response['MetricWidgetImage'])
+
 
 class Metric:
     def __init__(self, name, instanceID, label, yAxisSide = 'left'):
@@ -33,20 +48,10 @@ class Metric:
         return self.data
 
 
-def downloadMetricsGraph(metric_options, dest):
-    response = client.get_metric_widget_image(
-        MetricWidget = metric_options.toJSON(),
-        OutputFormat='png'
-    )
-
-    with open(dest, "wb") as file:
-            file.write(response['MetricWidgetImage'])
-
-
 def main():
-    cpuutil = Metric('CPUUtilization', 'i-00cbce2a2317e6396', 'CPU Usage', 'right')
-    netin = Metric('NetworkIn', 'i-00cbce2a2317e6396', 'Net in')
+    cpuutil = Metric('CPUUtilization', 'i-027cd9d606db7e17a', 'CPU Usage', 'right')
+    netin = Metric('NetworkIn', 'i-027cd9d606db7e17a', 'Net in')
     opts = MetricWidgetOptions([cpuutil, netin], "Testing title")
-    downloadMetricsGraph(opts, "test.png")
+    MetricWidget(opts).saveImage('test.png')
 
 main()

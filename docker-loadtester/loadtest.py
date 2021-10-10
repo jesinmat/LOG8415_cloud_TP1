@@ -2,61 +2,59 @@ from datetime import datetime
 import aiohttp
 import asyncio
 
-CONTINUOUS_THREAD_REQUESTS = 1000
-PAUSING_THREAD_REQUESTS_BEFORE_PAUSE = 500
-PAUSING_THREAD_REQUESTS_AFTER_PAUSE = 1000
-PAUSE_TIME_SECONDS = 60
+class LoadTester():
 
-def log(message):
-    time = datetime.now().strftime("%H:%M:%S")
-    print(f'[{time}]: {message}')
+    CONTINUOUS_THREAD_REQUESTS = 1000
+    PAUSING_THREAD_REQUESTS_BEFORE_PAUSE = 500
+    PAUSING_THREAD_REQUESTS_AFTER_PAUSE = 1000
+    PAUSE_TIME_SECONDS = 60
 
-async def send_request(session, url):
-    async with session.get(url) as response:
-        return response
+    def __init__(self, url, logger):
+        self.url = url
+        self.logger = logger
 
-async def requestLoop(url, amount, thread_name):
-    log(f'Sending requests in {thread_name}...')
-    async with aiohttp.ClientSession() as session:
-        for i in range(amount):
-            try:
-                await send_request(session, url)
-            except Exception as ex:
-                log(f'Exception: {ex}')
-            if (i+1) % 100 == 0:
-                log(f"Request #{str(i + 1)} in {thread_name}")
+    def log(self, data):
+        self.logger.log(data)
 
-async def requestLoopAsync(url, amount, thread_name):
-    log(f'Sending requests in {thread_name}...')
-    async with aiohttp.ClientSession() as session:
-        tasks = []
-        for _ in range(amount):
-            task = asyncio.ensure_future(send_request(session, url))
-            tasks.append(task)
-        await asyncio.gather(*tasks, return_exceptions=True)
+    async def send_request(self, session, url):
+        async with session.get(url) as response:
+            return response
 
-async def requestWithDelay(url, thread_name):
-    await requestLoopAsync(url, PAUSING_THREAD_REQUESTS_BEFORE_PAUSE, thread_name)
-    log(f'Pausing {thread_name}')
-    await asyncio.sleep(PAUSE_TIME_SECONDS)
-    log(f'Resuming {thread_name}')
-    await requestLoopAsync(url, PAUSING_THREAD_REQUESTS_AFTER_PAUSE, thread_name)
-    log(f'Finished {thread_name}')
+    async def requestLoop(self, url, amount, thread_name):
+        self.log(f'Sending requests in {thread_name}...')
+        async with aiohttp.ClientSession() as session:
+            for i in range(amount):
+                try:
+                    await self.send_request(session, url)
+                except Exception as ex:
+                    self.log(f'Exception: {ex}')
+                if (i+1) % 100 == 0:
+                    self.log(f"Request #{str(i + 1)} in {thread_name}")
 
-async def benchmark(url):
-    sequential = asyncio.ensure_future(requestLoop(url, CONTINUOUS_THREAD_REQUESTS, 'continuous thread'))
-    withWait = asyncio.ensure_future(requestWithDelay(url, 'thread with pause'))
-    await asyncio.gather(sequential, withWait)
+    async def requestWithDelay(self, url, thread_name):
+        await self.requestLoop(url, self.PAUSING_THREAD_REQUESTS_BEFORE_PAUSE, thread_name)
+        self.log(f'Pausing {thread_name}')
+        await asyncio.sleep(self.PAUSE_TIME_SECONDS)
+        self.log(f'Resuming {thread_name}')
+        await self.requestLoop(url, self.PAUSING_THREAD_REQUESTS_AFTER_PAUSE, thread_name)
+        self.log(f'Finished {thread_name}')
 
-def main():
-    import os
-    url = os.getenv("AWS_URL")
-    if url is not None:
-        log("Starting benchmark for {}".format(url))
-        asyncio.get_event_loop().run_until_complete(benchmark(url))
-        log('Done')
-    else:
-        log("No AWS_URL env variable specified.")
+    def benchmark(self):
+        sequential = asyncio.ensure_future(self.requestLoop(self.url, self.CONTINUOUS_THREAD_REQUESTS, 'continuous thread'))
+        withWait = asyncio.ensure_future(self.requestWithDelay(self.url, 'thread with pause'))
+        asyncio.get_event_loop().run_until_complete(asyncio.gather(sequential, withWait))
+
+
+class SimpleLogger():
+    def __init__(self, file = None):
+        if (file is not None):
+            self.file = open(file, 'w+')
     
+    def log(self, message):
+        time = datetime.now().strftime("%H:%M:%S")
+        contents = f'[{time}]: {message}'
+        print(contents)
+        if (self.file is not None):
+            self.file.write(f'{contents}\n')
 
-main()
+

@@ -2,3 +2,7 @@ workspace.code-workspace
 credentials
 *.json
 *.png
+__pycache__/
+log.txt
+images/
+constants.py
