@@ -2,8 +2,6 @@ import boto3
 import os.path
 import constants
 
-UBUNTU_IMAGE_ID = 'ami-09e67e426f25ce0d7'
-
 ec2 = boto3.resource('ec2')
 client = boto3.client('ec2')
 
@@ -58,7 +56,7 @@ def terminate(instanceIDs):
     return instances_action(instanceIDs, lambda ids: client.terminate_instances(InstanceIds=ids))
 
 def create(
-        imageId = UBUNTU_IMAGE_ID, instanceType = 't2.micro', 
+        imageId = constants.IMAGE_ID, instanceType = 't2.micro',
         keypair = constants.KEYPAIR_NAME, securityGroup = constants.SECURITY_GROUP,
         userScript = '', availabilityZone = 'us-east-1a',
         nbInstances = 1, tags = []):

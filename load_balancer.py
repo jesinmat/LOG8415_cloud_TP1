@@ -1,5 +1,5 @@
 import boto3
-from constants import KEYPAIR_NAME
+from constants import KEYPAIR_NAME, IMAGE_ID
 import aws_script
 import threading
 import random
@@ -13,7 +13,7 @@ def create_random_name():
     return ans
 
 class AmazonManager:
-    INSTANCE_TYPE_LIST = ['m4.large', 't2.xlarge']
+    INSTANCE_TYPE_LIST = ['t2.micro', 't2.micro'] #['m4.large', 't2.xlarge']
 
     def __init__(self, keypair = KEYPAIR_NAME):
         self.ec2_resource = boto3.resource('ec2')
@@ -23,9 +23,9 @@ class AmazonManager:
         self.children = [None, None]
         self.load_balancer_arn = None
         self.listener_arn = None
-        self.rule_arn = None
+        self.rules_arn = []
         self.dns_name = None
-        self.vpc = next(iter(self.ec2_resource.vpc.all()))
+        self.vpc = next(iter(self.ec2_resource.vpcs.all()))
         self.batch_name = create_random_name()
         print('Starting batch ' + self.batch_name)
 
@@ -47,6 +47,7 @@ class AmazonManager:
             thread.join()
 
         self.create_listener(self.children[0])
+        self.create_rule(self.children[0])
         self.create_rule(self.children[1])
 
         print('Waiting for heath checks (might take ~5 minutes)...')
@@ -94,8 +95,8 @@ class AmazonManager:
             Port=80,
             DefaultActions=[
                 {
-                    'Type': 'forward',
-                    'TargetGroupArn': child.target_group_arn,
+                    'Type': 'fixed-response',
+                    'FixedResponseConfig': { 'StatusCode': '503' },
                 },
             ]
         )
@@ -126,22 +127,42 @@ class AmazonManager:
                 },
             ]
         )
-        self.rule_arn = resp['Rules'][0]['RuleArn']
+        self.rules_arn.append( resp['Rules'][0]['RuleArn'] )
 
-    def delete_rule(self):
-        if self.rule_arn:
+    def delete_rules(self):
+        for rule in self.rule_arns:
             print('Delete rule')
             #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.delete_listener
-            self.elbv2.delete_rule(RuleArn=self.rule_arn)
+            self.elbv2.delete_rule(rule)
 
     def create_security_group(self):
-        response = self.vpc.create_security_group(
-            Description='Allow ssh and http',
-            GroupName='my-security-group-version-one',
-        )
-        self.security_group = response['GroupId']
+        SECURITY_GROUP_NAME = 'my-security-group-version-one'
+        print('Create security group')
+        sec_groups = self.ec2.describe_security_groups(GroupNames=[ SECURITY_GROUP_NAME ])
+        if sec_groups['SecurityGroups'] == []:
+            response = self.vpc.create_security_group(
+                Description='Allow ssh and http',
+                GroupName=SECURITY_GROUP_NAME,
+            )
+            self.security_group = response.group_id
+            self.ec2.modify_security_group_rules(
+                GroupId=self.security_group,
+                SecurityGroupRules=[
+                    { 
+                        'SecurityGroupRule': {
+                            'IpProtocol': 'tcp',
+                            'ToPort': 80,
+                            'CidrIpv4': '0.0.0.0/0',
+                            'CidrIpv6': '::0/0',
+                        } 
+                    },
+                ],
+            )
+        else:
+            self.security_group = sec_groups['SecurityGroups'][0]['GroupId']
 
     def delete_security_group(self):
+        print('Delete security group')
         self.ec2_resource.delete_security_group(self.security_group)
 
 class SubCluster:
@@ -187,11 +208,11 @@ class SubCluster:
         tags = [
             { 'Key': 'Name', 'Value': f'{self.parent.batch_name}-{self.cluster_nb}-{self.instance_type}' },
             { 'Key': 'Batch', 'Value': self.parent.batch_name },
-            { 'Key': 'Cluster', 'Value': self.cluster_nb }
+            { 'Key': 'Cluster', 'Value': str(self.cluster_nb) }
         ]
 
         resp = aws_script.create(
-            availabilityZone=self.zone, nbInstances=4, userScript=script, instanceType = self.instance_type, tags=tags, imageId=UBUNTU_IMAGE_ID, 
+            availabilityZone=self.zone, nbInstances=4, userScript=script, instanceType = self.instance_type, tags=tags, imageId=IMAGE_ID,
             securityGroup=self.parent.security_group
         )
         self.instance_ids = [ instance['InstanceId'] for instance in resp['Instances'] ]
