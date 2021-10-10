@@ -1,5 +1,8 @@
 workspace.code-workspace
 credentials
 *.json
-hello.sh
 __pycache__/
+*.aux
+*.log
+*.synctex.gz
+report.pdf
