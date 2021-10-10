@@ -34,38 +34,32 @@ class AmazonManager:
         self.batch_name = create_random_name()
         print('Starting batch ' + self.batch_name)
 
-        self.setup()
-
     def setup(self):
-        try:
-            self.create_security_group()
+        self.create_security_group()
 
-            threads = []
-            for cluster_nb, instance_type in enumerate(AmazonManager.INSTANCE_TYPE_LIST):
-                self.children.append( SubCluster(self, cluster_nb+1, instance_type) )
-                thread = threading.Thread(target=self.children[cluster_nb].setup)
-                thread.start()
-                threads.append( thread )
-                
-            self.create_load_balancer()
-            self.create_listener_if_needed()
+        threads = []
+        for cluster_nb, instance_type in enumerate(AmazonManager.INSTANCE_TYPE_LIST):
+            self.children.append( SubCluster(self, cluster_nb+1, instance_type) )
+            thread = threading.Thread(target=self.children[cluster_nb].setup)
+            thread.start()
+            threads.append( thread )
+            
+        self.create_load_balancer()
+        self.create_listener_if_needed()
 
-            for thread in threads:
-                thread.join()
+        for thread in threads:
+            thread.join()
 
+        for child in self.children:
+            self.create_rule(child)
+
+        y = input('Do you want to wait for health checks [y/n]?'+
+            ' Your application will not be online before health checks are passed. They might take 5-10 minutes.')
+        if y != 'n':
+            print('Waiting for health checks (might take 5-10 minutes)...')
             for child in self.children:
-                self.create_rule(child)
-
-            y = input('Do you want to wait for health checks [y/n]?'+
-                ' Your application will not be online before health checks are passed. They might take 5-10 minutes.')
-            if y != 'n':
-                print('Waiting for health checks (might take 5-10 minutes)...')
-                for child in self.children:
-                    child.wait_for_group()
-            print('Everything set up!')
-        except Exception as x:
-            self.shutdown()
-            raise x
+                child.wait_for_group()
+        print('Everything set up!')
 
     def shutdown(self):
         self.delete_rules()
@@ -322,7 +316,9 @@ class SubCluster:
 if __name__ == '__main__':
     manager = AmazonManager()
 
-    print(f'Your load balancer is deployed at {manager.dns_name}.')
-    i = input('Press ENTER to quit.')
-
-    manager.shutdown()
+    try:
+        manager.setup()
+        print(f'Your load balancer is deployed at {manager.dns_name}.')
+        i = input('Press ENTER to quit.')
+    finally:
+        manager.shutdown()
