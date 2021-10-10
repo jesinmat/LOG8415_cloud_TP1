@@ -261,7 +261,11 @@ class SubCluster:
 
         resp = aws_script.create(
             availabilityZone=self.zone, nbInstances=4, userScript=script, instanceType = self.instance_type, tags=tags, imageId=IMAGE_ID,
+<<<<<<< HEAD
             securityGroup=self.parent.security_group
+=======
+            securityGroup=self.parent.security_group, monitoring=True
+>>>>>>> origin/matyas
         )
         self.instance_ids = [ instance['InstanceId'] for instance in resp['Instances'] ]
 

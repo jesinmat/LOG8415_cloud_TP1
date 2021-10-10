@@ -1,9 +1,13 @@
 workspace.code-workspace
 credentials
 *.json
-__pycache__/
 *.aux
 *.log
 *.synctex.gz
 report.pdf
 *.png
+__pycache__/
+log.txt
+images/
+constants.py
+*.zip

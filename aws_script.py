@@ -59,7 +59,7 @@ def create(
         imageId = constants.IMAGE_ID, instanceType = 't2.micro',
         keypair = constants.KEYPAIR_NAME, securityGroup = constants.SECURITY_GROUP,
         userScript = '', availabilityZone = 'us-east-1a',
-        nbInstances = 1, tags = []):
+        nbInstances = 1, tags = [], monitoring = False):
     print('Creating instance...')
     if os.path.exists(userScript):
         with open(userScript, 'r') as file:
@@ -78,6 +78,9 @@ def create(
                             'ResourceType': 'instance',
                             'Tags': tags
                         }],
+                        Monitoring={
+                            'Enabled': monitoring
+                        }
                     )
 
 def ssh(instanceID):
@@ -124,7 +127,10 @@ def main():
         elif (cmd in ('c', 'create')):
             name = line.pop(0)
             kwargs = dict((k.lstrip('--'), v) for k, v in (pair.split('=') for pair in line))
-            create(name, **kwargs)
+            tags = [
+                { 'Key': 'Name', 'Value': name },
+            ]
+            create(tags = tags, **kwargs)
         elif (cmd in ('ssh')):
             ssh(line)
 
