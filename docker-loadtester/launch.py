@@ -10,7 +10,7 @@ def benchmark(url, logger):
     for path in paths:
         cluster = url + path
         tester = LoadTester(cluster, logger)
-        logger.log("Starting benchmark for {}".format(url))
+        logger.log("Starting benchmark for {}".format(cluster))
         tester.benchmark()
         logger.log('Benchmark done')
 
@@ -31,8 +31,8 @@ def main():
         return
   
     benchmark(url, logger)
-    logger.log('Benchmark done, waiting for metrics to be updated...')
-    time.sleep(60)
+    logger.log('Benchmark done, waiting 5 minutes for metrics to be updated...')
+    time.sleep(5*60)
     logger.log('Downloading metrics...')
     metrics = MetricsDownloader(os.path.join(outputDir, 'images/'))
     metrics.getMetricsForClusters()
