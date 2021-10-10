@@ -16,7 +16,7 @@ def benchmark(url, logger):
 
 
 def createOutputDir():
-    outputDir = os.path.join(os.getcwd(), 'docker-output/')
+    outputDir = os.path.join(os.getcwd(), 'output/')
     if not os.path.exists(outputDir):
         os.makedirs(outputDir)
     return outputDir
