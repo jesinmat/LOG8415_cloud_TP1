@@ -1,7 +1,7 @@
 import os
 
 def KEYPAIR_NAME():
-	return open('~/.aws/keypair-name').read()
+	return open('../keypair-name').read()
 
 def SECURITY_GROUP():
 	return input('Please enter a security group name.')
