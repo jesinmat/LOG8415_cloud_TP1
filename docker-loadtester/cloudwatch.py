@@ -11,7 +11,7 @@ class MetricWidgetOptions:
         self.yAxis = { 'left': { 'min': 0} }
         self.region = 'us-east-1'
         self.liveData = False
-        self.start = '-PT15M'
+        self.start = '-PT30M'
         self.end = 'P0D'
         self.timezone = '-0400'
 
