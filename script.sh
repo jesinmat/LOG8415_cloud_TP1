@@ -12,7 +12,7 @@ from load_balancer import AmazonManager
 manager = AmazonManager()
 manager.setup()
 
-subprocess.Popen(['bash', '-c', 
+completed = subprocess.run(["bash", "-c",
 f"""#!/usr/bin/bash
 cd docker-loadtester
 ./buildDockerImage.sh
