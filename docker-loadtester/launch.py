@@ -31,7 +31,7 @@ def main():
         return
   
     benchmark(url, logger)
-    logger.log('Benchmark done, waiting 5 minutes for metrics to be updated...')
+    logger.log('Benchmark done, waiting 4 minutes for metrics to be updated...')
     time.sleep(4*60)
     logger.log('Downloading metrics...')
     metrics = MetricsDownloader(os.path.join(outputDir, 'images/'))

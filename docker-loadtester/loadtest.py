@@ -54,7 +54,7 @@ class SimpleLogger():
     def log(self, message):
         time = datetime.now(dateutil.tz.gettz('America/Montreal')).strftime("%H:%M:%S")
         contents = f'[{time}]: {message}'
-        print(contents)
+        print(contents, flush=True)
         if (self.file is not None):
             self.file.write(f'{contents}\n')
 
