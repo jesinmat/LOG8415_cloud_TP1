@@ -59,13 +59,15 @@ UBUNTU_IMAGE_ID = 'ami-09e67e426f25ce0d7'
 
 def create(
         imageId = UBUNTU_IMAGE_ID, instanceType = 't2.micro',
-        keypair = constants.KEYPAIR_NAME(), securityGroup = constants.SECURITY_GROUP(),
+        keypair = constants.KEYPAIR_NAME(), securityGroup = None,
         userScript = '', availabilityZone = 'us-east-1a',
         nbInstances = 1, tags = [], monitoring = False):
     print('Creating instance...')
     if os.path.exists(userScript):
         with open(userScript, 'r') as file:
             userScript = file.read()
+    if securityGroup is None:
+        securityGroup = constants.SECURITY_GROUP()
     return client.run_instances(ImageId=imageId,
                         InstanceType=instanceType,
                         MinCount=nbInstances,
