@@ -1,7 +1,4 @@
-import boto3
 import json
-
-
 
 class MetricWidgetOptions:
     def __init__(self, metrics, title, statType = 'Maximum'):
@@ -14,7 +11,7 @@ class MetricWidgetOptions:
         self.yAxis = { 'left': { 'min': 0} }
         self.region = 'us-east-1'
         self.liveData = False
-        self.start = '-PT15M'
+        self.start = '-PT25M'
         self.end = 'P0D'
         self.timezone = '-0400'
 
@@ -44,10 +41,11 @@ class MetricSource:
 class MetricIdentifierType:
     EC2_INSTANCEID = 'InstanceId'
     LOAD_BALANCER = 'LoadBalancer'
+    TARGET_GROUP = 'TargetGroup'
 
 class Metric:
-    def __init__(self, source, name, identifierType, instanceID, label, yAxisSide = 'left'):
-        self.data = [source, name, identifierType, instanceID, { 'label': label, 'yAxis' : yAxisSide }]
+    def __init__(self, source, name, identifierType, instanceID, label, *args, yAxisSide = 'left'):
+        self.data = [source, name, identifierType, instanceID, *args, { 'label': label, 'yAxis' : yAxisSide }]
 
     def toJSON(self):
         return json.dumps(self.data)
@@ -62,4 +60,3 @@ def main():
     opts = MetricWidgetOptions([cpuutil, netin], "Testing title")
     MetricWidget(opts).saveImage('test.png')
 
-#main()
