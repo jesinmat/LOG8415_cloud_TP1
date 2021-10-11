@@ -4,8 +4,6 @@ import aws_script
 import threading
 import random
 
-IMAGE_ID = 'ami-09e67e426f25ce0d7'
-
 vocals = 'aeiou'
 consonants = 'bcdfghjklmnpqrstvwxz'
 def create_random_name():
