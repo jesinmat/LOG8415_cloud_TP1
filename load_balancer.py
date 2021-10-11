@@ -53,8 +53,8 @@ class AmazonManager:
             self.create_rule(child)
 
         print('Waiting for health checks (might take 5-10 minutes)...')
-        #for child in self.children:
-        #    child.wait_for_group()
+        for child in self.children:
+            child.wait_for_group()
         print('Everything set up!')
 
     def shutdown(self):
