@@ -32,11 +32,12 @@ def main():
   
     benchmark(url, logger)
     logger.log('Benchmark done, waiting 5 minutes for metrics to be updated...')
-    time.sleep(5*60)
+    time.sleep(4*60)
     logger.log('Downloading metrics...')
     metrics = MetricsDownloader(os.path.join(outputDir, 'images/'))
     metrics.getMetricsForClusters()
     metrics.getELBMetrics()
+    metrics.getTargetGroupsMetrics()
     logger.log('Done')
     
 

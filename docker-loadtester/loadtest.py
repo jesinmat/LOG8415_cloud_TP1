@@ -49,7 +49,7 @@ class LoadTester():
 class SimpleLogger():
     def __init__(self, file = None):
         if (file is not None):
-            self.file = open(file, 'w+')
+            self.file = open(file, 'w+', buffering=1)
     
     def log(self, message):
         time = datetime.now(dateutil.tz.gettz('America/Montreal')).strftime("%H:%M:%S")
