@@ -1,5 +1,5 @@
 def KEYPAIR_NAME():
-	return '~/.aws/amazon-key.pem'
+	return 'lightningbolt'
 
 def SECURITY_GROUP():
 	return input('Please enter a security group name.')
