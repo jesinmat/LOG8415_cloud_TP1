@@ -1,7 +1,7 @@
 import json
 
 class MetricWidgetOptions:
-    def __init__(self, metrics, title, statType = 'Maximum'):
+    def __init__(self, metrics, title, statType = 'Average'):
         self.metrics = [metric.toArray() for metric in metrics]
         self.title = title
         self.view = 'timeSeries'
@@ -11,7 +11,7 @@ class MetricWidgetOptions:
         self.yAxis = { 'left': { 'min': 0} }
         self.region = 'us-east-1'
         self.liveData = False
-        self.start = '-PT25M'
+        self.start = '-PT15M'
         self.end = 'P0D'
         self.timezone = '-0400'
 
@@ -53,10 +53,4 @@ class Metric:
     def toArray(self):
         return self.data
 
-
-def main():
-    cpuutil = Metric('CPUUtilization', 'i-027cd9d606db7e17a', 'CPU Usage', 'right')
-    netin = Metric('NetworkIn', 'i-027cd9d606db7e17a', 'Net in')
-    opts = MetricWidgetOptions([cpuutil, netin], "Testing title")
-    MetricWidget(opts).saveImage('test.png')
 
