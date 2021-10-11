@@ -6,6 +6,7 @@ git checkout pierre
 python3 - <<'END_SCRIPT'
 
 import subprocess
+import os
 from load_balancer import AmazonManager
 
 manager = AmazonManager()
