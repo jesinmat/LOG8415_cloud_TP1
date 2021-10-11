@@ -1,12 +1,14 @@
 # LOG8415_cloud_TP1
 
-TODO add better readme
+Project for the Log8415 Cloud Computing course, 2021.
+
+Authors: Pierre Ballif, Matyáš Ješina, Jakub Profota
 
 ## Running the whole project
 
 - Copy the script.sh file into any folder.
 - In the same folder, create a file named 'keypair-name' (with no extension) which contains the name of your key pair. For example, if your key is called `my_secret_key` and situated in `/path/to/my_secret_key.pem`, you will have to put `my_secret_key` into keypair-name. Do **not** put a newline at the end of the file.
-- Run script.sh
+- Run `script.sh`
 
 # Developer part
 
