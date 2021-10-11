@@ -8,7 +8,7 @@ function run() {
 
     OutDir="$PWD/output/"
 
-    docker run --rm -it -e AWS_URL -v ~/.aws/:/root/.aws/ -v "$OutDir":/output/ aws-loadtester
+    docker run --rm -e AWS_URL -v ~/.aws/:/root/.aws/ -v "$OutDir":/output/ aws-loadtester
 }
 
 run
