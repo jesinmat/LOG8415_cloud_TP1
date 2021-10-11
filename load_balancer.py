@@ -15,9 +15,9 @@ def create_random_name():
 
 class AmazonManager:
     INSTANCE_TYPE_LIST = [
-        {'type': 't2.micro', 'zone': 'us-east-1a'},
-        {'type': 't2.micro', 'zone': 'us-east-1b'},
-    ] #['m4.large', 't2.xlarge']
+        {'type': 'm4.large', 'zone': 'us-east-1a'},
+        {'type': 't2.xlarge', 'zone': 'us-east-1b'},
+    ]
 
     def __init__(self):
         self.ec2_resource = boto3.resource('ec2')
