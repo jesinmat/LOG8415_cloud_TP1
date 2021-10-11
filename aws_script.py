@@ -55,10 +55,8 @@ def terminate(instanceIDs):
     print('Terminating instance...')
     return instances_action(instanceIDs, lambda ids: client.terminate_instances(InstanceIds=ids))
 
-UBUNTU_IMAGE_ID = 'ami-09e67e426f25ce0d7'
-
 def create(
-        imageId = UBUNTU_IMAGE_ID, instanceType = 't2.micro',
+        imageId = constants.IMAGE_ID, instanceType = 't2.micro',
         keypair = constants.KEYPAIR_NAME(), securityGroup = None,
         userScript = '', availabilityZone = 'us-east-1a',
         nbInstances = 1, tags = [], monitoring = False):

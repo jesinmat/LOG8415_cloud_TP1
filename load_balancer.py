@@ -3,6 +3,7 @@ import botocore
 import aws_script
 import threading
 import random
+from constants import IMAGE_ID
 
 vocals = 'aeiou'
 consonants = 'bcdfghjklmnpqrstvwxz'
