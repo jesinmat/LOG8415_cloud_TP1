@@ -12,7 +12,7 @@ from load_balancer import AmazonManager
 manager = AmazonManager()
 manager.setup()
 
-time.sleep(60)
+time.sleep(2*60)
 
 completed = subprocess.run(["bash", "-c",
 f"""#!/usr/bin/bash
