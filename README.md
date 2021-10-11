@@ -4,7 +4,9 @@ TODO add better readme
 
 ## Running the whole project
 
-TODO Steps here
+- Copy the script.sh file into any folder.
+- In the same folder, create a file named 'keypair-name' (with no extension) which contains the name of your key pair. For example, if your key is called `my_secret_key` and situated in `/path/to/my_secret_key.pem`, you will have to put `my_secret_key` into keypair-name. Do **not** put a newline at the end of the file.
+- Run script.sh
 
 # Developer part
 

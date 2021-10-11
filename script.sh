@@ -12,14 +12,18 @@ from load_balancer import AmazonManager
 manager = AmazonManager()
 manager.setup()
 
-subprocess.run(f"""#!/usr/bin/bash
+subprocess.Popen(['bash', '-c', 
+f"""#!/usr/bin/bash
 cd docker-loadtester
 ./buildDockerImage.sh
 
 export AWS_URL='http://{manager.dns_name}'
 ./runDockerContainer.sh
-""")
+"""])
 
 manager.shutdown()
 
 END_SCRIPT
+
+cd ..
+rm LOG8415_cloud_TP1 -rf
