@@ -52,12 +52,9 @@ class AmazonManager:
         for child in self.children:
             self.create_rule(child)
 
-        y = input('Do you want to wait for health checks [y/n]?'+
-            ' Your application will not be online before health checks are passed. They might take 5-10 minutes.')
-        if y != 'n':
-            print('Waiting for health checks (might take 5-10 minutes)...')
-            for child in self.children:
-                child.wait_for_group()
+        print('Waiting for health checks (might take 5-10 minutes)...')
+        for child in self.children:
+            child.wait_for_group()
         print('Everything set up!')
 
     def shutdown(self):
