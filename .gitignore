@@ -9,5 +9,4 @@ report.pdf
 __pycache__/
 log.txt
 images/
-constants.py
 *.zip
