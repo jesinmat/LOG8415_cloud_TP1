@@ -196,9 +196,12 @@ class AmazonManager:
     def delete_security_group(self):
         if self.security_group:
             print('Delete security group')
-            #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.Client.delete_security_group
-            self.ec2.delete_security_group(GroupId=self.security_group)
-            self.security_group = None
+            try:
+                #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.Client.delete_security_group
+                self.ec2.delete_security_group(GroupId=self.security_group)
+                self.security_group = None
+            except:
+                print("Finished!")
 
 
 class SubCluster:
