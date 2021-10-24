@@ -1,15 +1,15 @@
-from loadtest import SimpleLogger, LoadTester
+from loadtest import SimpleLogger, LoadTester, DemoTester
 import os
 from metric_downloader import MetricsDownloader
 import time
 
 
 def benchmark(url, logger):
-    paths = [ '/cluster1', '/cluster2' ]
+    paths = [ [ '/cluster1', 50 ] , [ '/cluster2', 150 ] ]
 
-    for path in paths:
+    for path, num in paths:
         cluster = url + path
-        tester = LoadTester(cluster, logger)
+        tester = DemoTester(cluster, logger, num)
         logger.log("Starting benchmark for {}".format(cluster))
         tester.benchmark()
         logger.log('Benchmark done')

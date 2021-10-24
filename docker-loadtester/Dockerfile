@@ -5,6 +5,6 @@ ADD launch.py /
 ADD cloudwatch.py /
 ADD metric_downloader.py /
 
-RUN pip install aiohttp boto3
+RUN pip -qqq install aiohttp boto3
 
 ENTRYPOINT [ "python", "./launch.py" ]

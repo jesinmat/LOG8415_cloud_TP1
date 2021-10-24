@@ -3,6 +3,33 @@ import dateutil.tz
 import aiohttp
 import asyncio
 
+class DemoTester():
+    def __init__(self, url, logger, amount):
+        self.url = url
+        self.logger = logger
+        self.amount = amount
+
+    def log(self, data):
+        self.logger.log(data)
+
+    async def send_request(self, session, url):
+        async with session.get(url) as response:
+            return response
+
+    async def requestLoop(self, url, amount, thread_name):
+        self.log(f'Sending requests in {thread_name}...')
+        async with aiohttp.ClientSession() as session:
+            for i in range(amount):
+                try:
+                    await self.send_request(session, url)
+                except Exception as ex:
+                    self.log(f'Exception: {ex}')
+
+    def benchmark(self):
+        sequential = asyncio.ensure_future(self.requestLoop(self.url, self.amount, 'continuous thread'))
+        asyncio.get_event_loop().run_until_complete(asyncio.gather(sequential))
+
+
 class LoadTester():
 
     CONTINUOUS_THREAD_REQUESTS = 100

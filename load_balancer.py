@@ -200,6 +200,7 @@ class AmazonManager:
             self.ec2.delete_security_group(GroupId=self.security_group)
             self.security_group = None
 
+
 class SubCluster:
     def __init__(self, parent, cluster_nb, instanceType = {'type': 't2.micro', 'zone': 'us-east-1a'}):
         self.parent = parent
@@ -244,7 +245,7 @@ class SubCluster:
         return f'cluster-{self.cluster_nb}'
 
     def create_instances(self):
-        print('Create 4 instances')
+        print('Create 2 instances')
 
         with open('flask_deploy.sh', 'r') as file:
             script = file.read() % self.cluster_nb
@@ -256,7 +257,7 @@ class SubCluster:
         ]
 
         resp = aws_script.create(
-            availabilityZone=self.zone, nbInstances=4, userScript=script, instanceType = self.instance_type, tags=tags, imageId=IMAGE_ID,
+            availabilityZone=self.zone, nbInstances=2, userScript=script, instanceType = self.instance_type, tags=tags, imageId=IMAGE_ID,
             securityGroup=self.parent.security_group, monitoring=True
         )
         self.instance_ids = [ instance['InstanceId'] for instance in resp['Instances'] ]
