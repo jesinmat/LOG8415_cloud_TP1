@@ -1,7 +1,8 @@
 import os
 
 def KEYPAIR_NAME():
-	return open('../keypair-name').read()
+	#return open('../keypair-name').read()
+    return 'jakub'
 
 def SECURITY_GROUP():
 	return input('Please enter a security group name.')

@@ -1,7 +1,5 @@
 #!/usr/bin/bash
 
-git clone https://github.com/jesinmat/LOG8415_cloud_TP1.git && cd LOG8415_cloud_TP1
-
 python3 - <<'END_SCRIPT'
 
 import subprocess

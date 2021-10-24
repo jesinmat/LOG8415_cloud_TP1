@@ -15,8 +15,8 @@ def create_random_name():
 
 class AmazonManager:
     INSTANCE_TYPE_LIST = [
-        {'type': 'm4.large', 'zone': 'us-east-1a'},
-        {'type': 't2.xlarge', 'zone': 'us-east-1b'},
+        {'type': 't2.micro', 'zone': 'us-east-1a'},
+        {'type': 't2.micro', 'zone': 'us-east-1b'},
     ]
 
     def __init__(self):
